@@ -1,0 +1,385 @@
+example api version 2.0
+
+原则：抽象、可扩展、易集成
+
+0	说明
+0.1	基本说明
+采用HTTP/HTTPS 1.1协议，支持GET和POST两种操作，查询采用GET操作，修改与更新采用POST操作。
+域名：api.example.com
+路径前缀：/v2.0 为接口版本信息
+请求参数：GET采用Query String方式，POST默认采用application/x-www-form-urlencoded编码（enctype），文件上传采用multipart/form-data。
+示例：
+	GET：http://api.example.com/v2.0/[Resource name]?parameter1=value1&parameter2=value2
+
+	POST：http://api.example.com/v2.0/[Resource name]
+	HTTP body:parameter1=value1&parameter2=value2
+
+响应：GET和POST统一以JSON格式的HTTP消息体返回
+访问控制：通过登录接口获取token，在访问用户私有、受限资源时，需要将token作为请求参数，服务端据此验证请求合法性。
+
+0.2	约定实体、参数名称
+0.2.0	基本类型
+	字符串：统一为UTF-8编码格式
+	时间：自1970年1月1日0时起的毫秒数
+	
+0.2.1	Account
+	uid:string，用户内部唯一标识
+	uname：string，用户名，系统内唯一，可为空
+	password：string，密码，md5加密
+	phone：string，用户手机号，系统内唯一，可为空
+	email：string，用户邮箱，系统内唯一，可为空
+	register
+		timestamp：number，注册时间
+		agent：string，注册终端
+	active：number，是否激活，0：未激活，1：激活，-1：禁用
+	security
+		code：string，安全码
+		timestamp：number，安全码更新时间
+		
+0.2.2	Profile
+	uid：string，用户内部唯一标识
+	nickname：string，昵称，dname
+	birthday：number，生日
+	gender：number，性别，1：女，2：男
+	iconUrl：string，头像url
+	introduction：string，自我介绍
+	country：string，国家
+	province：string，省份
+	city：string，城市
+	education：教育经历
+		start：number，开始时间
+		end：number，结束时间
+		schoolName，string，学校名称
+	workExperience：工作经历
+		start：number，开始时间
+		end：number，结束时间
+		companyName，string，公司名称
+	
+0.2.3	Setting
+	<待补充>
+	
+0.2.4	Message
+	mid：string，消息唯一标识
+	msgType：number，消息类型：内容、命令
+	agent：string，消息生成使用的设备
+	shareType：number，分享类型：公开、指定、收藏
+	actionType：number，动作类型：原创、评论、回复、收藏
+	state：number，消息状态：正常（均可见），隐藏（本人可见），删除（都不可见），管理员删除
+	created：number，消息创建时间
+	updated：number，消息最后一次修改时间
+	expiration：number，有效期
+	priority：number，优先级
+	
+	sender：string，为uid，用户唯一标识
+	receiver：object，如[{"uid":"44f4980a42148aacd350a29280d5f2cd"},{"email":"email@example.com"},{"uname":"feedss"},{"phone":"13800138000"}]
+	
+	parentMid：string，父消息id
+	rootMid：string，根消息id
+	
+	tags：string，标签列表["美女","招聘"]
+	body：string，html格式
+	
+0.2.5	Contact
+	cid：string，朋友唯一标识，如：44f4980a42148aacd350a29280d5f2cd
+	nickname：string，备注名称，如："小子"
+	uid：string，系统内用户唯一ID
+	email：string，邮箱
+	phone：string，手机号码
+	
+0.3	状态码，参照HTTP code分类
+	200：OK
+	400：错误的请求
+	404：不存在的资源
+	500：服务器处理错误
+	...
+	
+1	用户、账户类 users，account
+
+1.1	注册、激活、密码
+	POST：http://api.example.com/v2.0/account
+	参数：
+	响应：
+	说明：
+	
+1.2 查询账户
+	GET：http://api.example.com/v2.0/account
+	参数：
+	响应：
+	说明：
+		
+1.3	登录、登出
+	POST：http://api.example.com/v2.0/session
+	参数：
+		uid：选填，string，系统内唯一标识，如：44f4980a42148aacd350a29280d5f2cd
+		uname：选填，string，唯一用户名，如：feedss
+		email：选填，string，邮箱，如：feedss@gmail.com
+		phone：选填，string，手机号码，如：13810163257
+		token：登录不填、登出必填，string，如：94a08da1fecbb6e8b46990538c7b50b2
+		password：选填，string，md5加密
+		deviceUUID：必填，string，设备唯一ID，消息推送使用，apns:012548005894443，gcm:3F1478C855BAF7E7，jpush:
+		agent：必填，string，客户端软件标识，如example_android_2.0.3，example_iphone_3.1.1
+	响应：
+		成功：{"code":200,"token":"94a08da1fecbb6e8b46990538c7b50b2","tokenValidTimestamp":1361081860111}
+		失败：{"code":501,"reason":"密码不正确"}
+	说明：
+		传password参数且不为空为登录，不传password参数为登出；
+		登录uid，uname，email，phone选填其一;
+		tokenValidTimestamp为token的截止有效时间。
+
+1.4	个人资料查询
+	GET：http://api.example.com/v2.0/profile
+	参数：
+	响应：
+	说明：
+		没有传递的字段不作修改
+		
+1.5	个人资料更新
+	POST：http://api.example.com/v2.0/profile
+	参数：
+	响应：
+	说明：
+	
+1.6	个人设置查询
+	GET：http://api.example.com/v2.0/setting
+	参数：
+	响应：
+	说明：
+
+1.7	个人设置更新
+	POST：http://api.example.com/v2.0/setting
+	参数：
+	响应：
+	说明：
+
+2	分享、动态、私信 timelines，tweets，direct messages
+2.1	新建消息
+	POST：http://api.example.com/v2.0/message
+	参数：
+	响应：
+	说明：
+	
+2.2	查询消息
+	GET：http://api.example.com/v2.0/message
+	参数：
+		mid：必选，消息唯一标识，如：94a08da1fecbb6e8b46990538c7b50b2
+	响应：
+	说明：
+	
+2.3	更新、删除消息
+	POST：http://api.example.com/v2.0/message
+	参数：
+	响应：
+	说明：
+
+2.5	获取动态
+	GET	http://api.example.com/v2.0/timeline
+	参数：
+		uids：uid列表，
+	响应：
+	说明：
+		
+2.6 获取评论
+	GET	http://api.example.com/v2.0/comment
+	参数：
+		mid：消息唯一标识
+	响应：
+	说明：
+		
+2.7	获取收到的私信
+	GET	http://api.example.com/v2.0/inbox
+	参数：
+	响应：
+	说明：
+		
+2.8	获取发送的私信		
+	GET	http://api.example.com/v2.0/outbox
+	参数：
+	响应：
+	说明：	
+
+4	朋友、关注关系、圈子 friends，followers，group
+4.1	新建联系人
+	POST：http://api.example.com/v2.0/contact
+	参数：
+	响应：
+	说明：	
+	
+4.2	更新联系人
+	POST：http://api.example.com/v2.0/contact
+	参数：
+	响应：
+	说明：	
+	
+4.3	删除联系人
+	POST：http://api.example.com/v2.0/contact
+	参数：
+	响应：
+	说明：	
+
+4.4	获取联系人列表
+	GET：http://api.example.com/v2.0/contact
+	参数：
+	响应：
+	说明：	
+	
+4.5	新建关注
+	POST：http://api.example.com/v2.0/following
+	参数：
+	响应：
+	说明：	
+
+4.6	取消关注
+	POST：http://api.example.com/v2.0/following
+	参数：
+	响应：
+	说明：	
+	
+4.7 获取关注列表
+	GET：http://api.example.com/v2.0/following
+	参数：
+	响应：
+	说明：	
+
+4.8	获取粉丝列表
+	GET：http://api.example.com/v2.0/follower
+	参数：
+	响应：
+	说明：	
+
+4.9	查询关注
+	GET	http://api.example.com/v2.0/isfollowing
+	参数：
+	响应：
+	说明：	
+
+4.10	新建圈子
+	POST：http://api.example.com/v2.0/group
+	参数：
+	响应：
+	说明：	
+	
+4.11	更新圈子
+	POST：http://api.example.com/v2.0/group
+	参数：
+	响应：
+	说明：	
+	
+4.12	删除圈子
+	POST：http://api.example.com/v2.0/group
+	参数：
+	响应：
+	说明：	
+
+4.13	获取圈子列表及成员
+	GET：http://api.example.com/v2.0/group
+	参数：
+	响应：
+	说明：	
+
+4.14	添加圈子成员
+	POST：http://api.example.com/v2.0/group/member
+	参数：
+	响应：
+	说明：	
+
+4.15	删除圈子成员
+	POST：http://api.example.com/v2.0/group/member
+	参数：
+	响应：
+	说明：	
+
+5	搜索、推荐 search，suggest
+5.1	搜索用户
+	GET：http://api.example.com/v2.0/search/user
+	参数：
+		keyword：可选，搜索关键词，在昵称、个人说明、教育、工作经历等字段中匹配，如：美女
+		langtitude：可选，经度，如：37.7821120598956
+		latitude：可选，维度，如：-122.400612831116
+		lastCheckinTimestamp：最晚的位置检入时间，如：1361081860111
+		gender：可选，男女，如：1（女），2（男）
+		age：可选，年龄，加减2岁换算成生日区间，如：20
+		offset：可选，开始位置，从0开始，如：10
+		results：可选，返回条数，默认10条，如：20
+	响应：
+		{"code":200,"total":100,"result":[	{"uid":"44f4980a42148aacd350a29280d5f2cd","nickname":"美女","iconUrl":"http://static.example.com/icon/44f4980a42148aacd350a29280d5f2cd"},
+{"uid":"44f4980a42148aacd350a29280d5f2cd","nickname":"美女","iconUrl":"http://static.example.com/icon/44f4980a42148aacd350a29280d5f2cd"}
+		]}
+	说明：
+		搜索条件必传一种，传多个为AND关系
+	
+5.2	搜索消息
+	GET：http://api.example.com/v2.0/search/message
+	参数：
+	响应：
+	说明：	
+
+5.3	推荐用户
+	GET：http://api.example.com/v2.0/suggest/user
+	参数：
+	响应：
+	说明：	
+	
+5.4	推荐消息
+	GET：http://api.example.com/v2.0/suggest/message
+	参数：
+	响应：
+	说明：	
+
+6	收藏 favorites
+6.1	新建收藏
+	POST：http://api.example.com/v2.0/favorite
+	参数：
+		mid，必填，消息唯一标识，如：94a08da1fecbb6e8b46990538c7b50b2
+		
+	响应：
+	说明：	
+	
+6.2	获取收藏
+	GET：http://api.example.com/v2.0/favorite
+	参数：
+	响应：
+	说明：	
+		
+6.3	删除收藏
+	POST：http://api.example.com/v2.0/favorite
+	参数：
+	响应：
+	说明：	
+
+7	位置 places，geo
+7.1	登记、签出位置
+	POST：http://api.example.com/v2.0/geo
+	参数：
+		token，必填，登录标识
+		uid，必填，用户唯一标识
+		longtitude，可选，经度，示例：37.7821120598956
+		latitude，可选，纬度，示例：-122.400612831116
+		description，可选，描述信息
+	响应：
+		{"code":200}
+	说明：
+		签出时，不提交longtitude和latitude
+	
+8	通知 notification
+<待补充>
+
+9	上传 upload
+9.1	上传
+	POST：http://api.example.com/v2.0/entity
+	参数：
+	响应：
+	说明：	
+	
+9.2	更新描述、删除
+	POST：http://api.example.com/v2.0/entity
+	参数：
+	响应：
+	说明：	
+
+10	其他 others
+10.1	检查客户端更新
+	GET：http://api.example.com/v2.0/version
+	参数：
+	响应：
+	说明：	
+
